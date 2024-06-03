@@ -12,25 +12,23 @@ def reassign_manito(collector, field, sub_objs, using):
         obj.save()
 
 class Mgroup(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
 
 class Muser(AbstractUser):
-    username = models.CharField(max_length=150)
+    username = models.CharField(max_length=50, unique=True)
     group = models.ForeignKey(Mgroup, on_delete=models.CASCADE)
     manito = models.ForeignKey('self', on_delete=reassign_manito, null=True, blank=True)
-
+    password = models.CharField(max_length=255)
     class Meta:
         unique_together = ('username', 'group')  # username과 group의 조합이 고유하도록 설정
-
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name="muser_groups"  # 각 Muser 인스턴스의 그룹 접근 시 사용할 이름
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name="muser_permissions"  # 각 Muser 인스턴스의 권한 접근 시 사용할 이름
-    )
+    
+    USERNAME_FIELD = 'username' 
+    def has_perm(self, perm, obj=None):
+    	return True
+        
+    def has_module_perms(self, app_label):
+        return True 

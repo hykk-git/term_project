@@ -6,39 +6,44 @@ from .models import Muser, Mgroup
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import GroupRegistrationForm
+from django.contrib.auth.hashers import make_password
 
 def register(request):
     return redirect('register_user')
 
 def register_group(request):
     if request.method == 'POST':
-        form = GroupRegistrationForm(request.POST)
-        if form.is_valid():
-            group = form.save()
-            members = [value for key, value in request.POST.items() if 'members' in key and value]
-            users = []
-            for member_username in members:
-                if Muser.objects.filter(username=member_username, group=group).exists():
-                    messages.error(request, f"사용자 이름 '{member_username}'가 이미 그룹 '{group.name}'에 존재합니다.")
-                    return redirect('register_group')
-                user = Muser.objects.create_user(username=member_username, password='defaultpassword', group=group)
-                user.set_password('defaultpassword')  # 비밀번호 해싱
-                user.save()
-                users.append(user)
-            
-            random.shuffle(users)
-            users_count = len(users)
-            for i in range(users_count):
-                users[i].manito = users[(i+1) % users_count]
-                users[i].save()
+        username = request.POST.get('username')
+        group = request.POST.get('group')
+        if Mgroup.objects.filter(name=group).exists():
+            # 그룹이 존재하면 오류 메시지를 반환합니다.
+            return render(request, 'register_group.html', {'user_count': range(1, 6)}, {'error': '그룹이 이미 존재합니다. 다른 이름을 사용하세요.'})
+        
+        users_data = []
 
-            messages.success(request, '그룹과 구성원이 성공적으로 등록되었으며, 마니또가 할당되었습니다.')
-            return redirect('success')
-        else:
-            messages.error(request, '입력 정보를 확인하세요.')
-    else:
-        form = GroupRegistrationForm()
-    return render(request, 'register_group.html', {'form': form, 'range': range(10)})
+        # 기본 비밀번호 설정
+        default_password = 'default_password'
+
+        user_index = 1
+        while request.POST.get(f'username{user_index}'):
+            username = request.POST.get(f'username{user_index}')
+            if username:
+                users_data.append({
+                    'username': username,
+                    'password': make_password(default_password),
+                })
+            user_index += 1
+            
+        # 그룹 생성
+        group, created = Mgroup.objects.get_or_create(name=group)
+        
+        # 사용자 생성
+        for user_data in users_data:
+            Muser.objects.create(username=user_data['username'], group=group, password=user_data['password'])
+        messages.success(request, '그룹과 구성원이 성공적으로 등록되었으며, 마니또가 할당되었습니다.')
+        return redirect('success')  # 회원가입 성공 후 success 페이지로 리다이렉션
+
+    return render(request, 'register_group.html', {'user_count': range(1, 6)})
 
 def register_user(request):
     if request.method == 'POST':
