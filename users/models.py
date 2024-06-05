@@ -13,7 +13,6 @@ def reassign_manito(collector, field, sub_objs, using):
 
 class Mgroup(models.Model):
     name = models.CharField(max_length=30)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -21,8 +20,8 @@ class Mgroup(models.Model):
 class Muser(AbstractUser):
     username = models.CharField(max_length=50, unique=True)
     group = models.ForeignKey(Mgroup, on_delete=models.CASCADE)
-    manito = models.ForeignKey('self', on_delete=reassign_manito, null=True, blank=True)
-    password = models.CharField(max_length=255)
+    manito = models.ForeignKey('self', on_delete=reassign_manito)
+    password = models.CharField(max_length=30)
     class Meta:
         unique_together = ('username', 'group')  # username과 group의 조합이 고유하도록 설정
     
