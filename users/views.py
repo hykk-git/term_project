@@ -8,6 +8,7 @@ from django.contrib import messages
 from .forms import GroupRegistrationForm
 from django.contrib.auth.hashers import make_password
 from django.http import JsonResponse
+import random
 
 def assign_manito(users):
     random.shuffle(users)
