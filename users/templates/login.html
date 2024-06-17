@@ -1,65 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
     <script>
-        $(function() {
-            var availableGroups = [
-                {% for group in groups %}
-                "{{ group.name }}"{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            ];
-            $("#group_name").autocomplete({
-                source: availableGroups,
-                select: function(event, ui) {
-                    var groupName = ui.item.value;
-                    $.ajax({
-                        url: "{% url 'get_users' %}",
-                        data: {
-                            'group_name': groupName
-                        },
-                        success: function(data) {
-                            var availableUsers = data.map(user => user.username);
-                            $("#user_name").autocomplete({
-                                source: availableUsers
-                            });
-                        }
-                    });
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const groupInput = document.getElementById('group_name');
+            const datalist = document.createElement('datalist');
+            datalist.id = 'group-list';
+
+            // 그룹 이름들을 datalist에 추가
+            const groups = [{% for group in groups %}{ name: '{{ group.name }}' }{% if not forloop.last %}, {% endif %}{% endfor %}];
+            groups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.name;
+                datalist.appendChild(option);
             });
+
+            document.body.appendChild(datalist);
+            groupInput.setAttribute('list', 'group-list');
         });
     </script>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center">Login</h1>
-        <form method="post" action="{% url 'login' %}">
+    <div class="container">
+        <h1 class="mt-5">정보 확인</h1>
+        <form method="post" action="{% url 'user_login' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label for="group_name">Group Name:</label>
-                <input type="text" class="form-control" id="group_name" name="group_name" required>
+                <label for="group_name">그룹 이름</label>
+                <input type="text" class="form-control" id="group_name" name="group_name" required autocomplete="off">
             </div>
             <div class="form-group">
-                <label for="user_name">User Name:</label>
-                <input type="text" class="form-control" id="user_name" name="user_name" required>
+                <label for="user_name">사용자명</label>
+                <input type="text" class="form-control" id="user_name" name="user_name" required autocomplete="off">
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <label for="password">비밀번호</label>
+                <input type="password" class="form-control" id="password" name="password" required autocomplete="off">
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="btn btn-success">Login</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Go Back</a>
         </form>
-
         {% if error %}
-        <div class="alert alert-danger mt-3">{{ error }}</div>
+        <p class="text-danger mt-3">{{ error }}</p>
         {% endif %}
     </div>
-
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 </body>

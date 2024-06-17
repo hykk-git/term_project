@@ -19,6 +19,9 @@ class UserManager(BaseUserManager):
             raise ValueError('The given group must be set')
         if not username:
             raise ValueError('The given username must be set')
+        
+        group_instance, created = Mgroup.objects.get_or_create(name=group)
+        
         user = self.model(group=group_instance, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -71,6 +74,15 @@ class Muser(AbstractUser):
     def has_module_perms(self, app_label):
         return self.is_superuser or self.is_staff
 
-        """1. 등록시 그룹이름 겹칠때, 사용자 이름 겹칠 때 예외처리
-           2. 비밀번호 틀렸을때
-        """
+class Message(models.Model):
+    sender = models.ForeignKey(Muser, related_name='sent_messages', on_delete=models.CASCADE)
+    receiver = models.ForeignKey(Muser, related_name='received_messages', on_delete=models.CASCADE)
+    content = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'From {self.sender.username} to {self.receiver.username}'
+        
+"""1. 등록시 그룹이름 겹칠때, 사용자 이름 겹칠 때 예외처리
+    2. 비밀번호 틀렸을때
+"""
