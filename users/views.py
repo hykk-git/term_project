@@ -7,6 +7,9 @@ from django.contrib.auth.hashers import make_password
 from django.http import JsonResponse
 from django.urls import reverse
 from django.middleware.csrf import get_token
+from django_celery_beat.models import CrontabSchedule, PeriodicTask
+from django.utils import timezone
+import json
 import random
 
 def assign_manito(users):
@@ -21,8 +24,10 @@ def register_group(request):
         group_name = request.POST.get('group_name')
         end_date = request.POST.get('end_date')
         
+        end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%dT%H:%M'))
+        
         if Mgroup.objects.filter(name=group_name).exists():
-            # 그룹이 존재하면 오류 메시지를 반환합니다.
+            # 그룹이 존재하면 오류 메시지를 반환
             return render(request, 'register_group.html', {'user_count': range(1, 6), 'error': '그룹이 이미 존재합니다. 다른 이름을 사용하세요.'})
         
         users_data = []
@@ -51,7 +56,7 @@ def register_group(request):
             return render(request, 'register_group.html', {'user_count': range(1, 6), 'error': error_message})
         
         # 그룹 생성
-        group, created = Mgroup.objects.get_or_create(name=group_name, end_date = end_date)
+        group, created = Mgroup.objects.get_or_create(name=group_name, end_date=end_date)
         
         # 사용자 생성
         users = []
@@ -63,11 +68,27 @@ def register_group(request):
         # 마니또 배정
         assign_manito(users)
         
+        # 주기적인 작업 생성
+        schedule, _ = CrontabSchedule.objects.get_or_create(
+            minute='0',
+            hour='0',
+            day_of_month='*',
+            month_of_year='*',
+            day_of_week='*'
+        )
+
+        PeriodicTask.objects.create(
+            crontab=schedule,
+            name=f'Delete expired group {group_name}',
+            task='users.tasks.delete_expired_groups',
+            args=json.dumps([group.id]),
+            expires=end_date  # 작업 만료일을 그룹 종료일로 설정
+        )
+
         messages.success(request, '그룹과 구성원이 성공적으로 등록되었으며, 마니또가 할당되었습니다.')
         return redirect('success')  # 회원가입 성공 후 success 페이지로 리다이렉션
 
     return render(request, 'register_group.html', {'user_count': range(1, 6)})
-
 def register_user(request):
     if request.method == 'POST':
         group_name = request.POST.get('group_name')
@@ -83,7 +104,7 @@ def register_user(request):
         user.password = make_password(new_password)
         user.save()
 
-        messages.success(request, '비밀번호가 성공적으로 변경되었습니다.')
+        messages.success(request, '비밀키가 설정되었습니다.')
         return redirect('success')
 
     return render(request, 'register_user.html', {'groups': Mgroup.objects.all()})
