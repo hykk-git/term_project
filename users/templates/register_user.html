@@ -7,6 +7,16 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dongle&family=Nanum+Gothic&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dongle&family=Jua&family=Nanum+Gothic&display=swap');
+        body {
+            font-family: "Nanum Gothic", sans-serif;
+        }
+        .text-center {
+            font-family: "Jua", sans-serif;
+        }
+    </style>
     <script>
         $(function() {
             var availableGroups = [
@@ -42,20 +52,23 @@
         <form method="post" action="{% url 'register_user' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label for="group_name">Group Name:</label>
+                <label for="group_name">그룹명:</label>
                 <input type="text" class="form-control" id="group_name" name="group_name" required autocomplete="off">
             </div>
+            <br>
             <div class="form-group">
-                <label for="user_name">User Name:</label>
+                <label for="user_name">사용자명:</label>
                 <select class="form-control" id="user_name" name="user_name" required autocomplete="off">
-                    <option value="">Select User</option>
+                    <option value="">목록에서 사용자를 선택하세요</option>
                 </select>
             </div>
+            <br>
             <div class="form-group">
-                <label for="new_password">New Password:</label>
+                <label for="new_password">비밀키 설정</label>
                 <input type="password" class="form-control" id="new_password" name="new_password" required autocomplete="off">
             </div>
-            <button type="submit" class="btn btn-primary">Change Password</button>
+            <br>
+            <button type="submit" class="btn btn-primary">설정하기!</button>
         </form>
 
         {% if error %}

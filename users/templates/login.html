@@ -3,13 +3,22 @@
 <head>
     <title>Login</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dongle&family=Nanum+Gothic&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dongle&family=Jua&family=Nanum+Gothic&display=swap');
+        body {
+            font-family: "Nanum Gothic", sans-serif;
+        }
+        .mt-5 {
+            font-family: "Jua", sans-serif;
+        }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const groupInput = document.getElementById('group_name');
             const datalist = document.createElement('datalist');
             datalist.id = 'group-list';
 
-            // 그룹 이름들을 datalist에 추가
             const groups = [{% for group in groups %}{ name: '{{ group.name }}' }{% if not forloop.last %}, {% endif %}{% endfor %}];
             groups.forEach(group => {
                 const option = document.createElement('option');
@@ -36,11 +45,11 @@
                 <input type="text" class="form-control" id="user_name" name="user_name" required autocomplete="off">
             </div>
             <div class="form-group">
-                <label for="password">비밀번호</label>
+                <label for="password">비밀키</label>
                 <input type="password" class="form-control" id="password" name="password" required autocomplete="off">
             </div>
-            <button type="submit" class="btn btn-success">Login</button>
-            <a href="{% url 'home' %}" class="btn btn-secondary">Go Back</a>
+            <button type="submit" class="btn btn-success">확인!</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">돌아가기</a>
         </form>
         {% if error %}
         <p class="text-danger mt-3">{{ error }}</p>

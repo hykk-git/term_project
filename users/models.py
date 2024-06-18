@@ -45,7 +45,7 @@ class UserManager(BaseUserManager):
 
 class Mgroup(models.Model):
     name = models.CharField(max_length=30)
-
+    end_date = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return self.name
     

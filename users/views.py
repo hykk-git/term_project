@@ -19,6 +19,7 @@ def assign_manito(users):
 def register_group(request):
     if request.method == 'POST':
         group_name = request.POST.get('group_name')
+        end_date = request.POST.get('end_date')
         
         if Mgroup.objects.filter(name=group_name).exists():
             # 그룹이 존재하면 오류 메시지를 반환합니다.
@@ -50,7 +51,7 @@ def register_group(request):
             return render(request, 'register_group.html', {'user_count': range(1, 6), 'error': error_message})
         
         # 그룹 생성
-        group, created = Mgroup.objects.get_or_create(name=group_name)
+        group, created = Mgroup.objects.get_or_create(name=group_name, end_date = end_date)
         
         # 사용자 생성
         users = []
@@ -125,8 +126,10 @@ def success(request):
 def manito_message(request):
     user = request.user
     manito = user.manito
+    end_date = user.group.end_date if user.group.end_date else None
     context = {
-        'manito_name': manito.username if manito else '마니또가 없습니다.'
+        'manito_name': manito.username if manito else '마니또가 없습니다.',
+        'end_date' : end_date.strftime('%Y-%m-%d %H:%M:%S') if end_date else "0"
     }
     return render(request, 'manito_message.html', context)
 

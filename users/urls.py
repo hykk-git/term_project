@@ -1,6 +1,8 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import *
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('login/', user_login, name='user_login'),
@@ -13,4 +15,4 @@ urlpatterns = [
     path('inbox/', inbox, name='inbox'),
     path('delete_message/<int:message_id>/', delete_message, name='delete_message'),
     path('logout/', logout_view, name='logout_view'),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
