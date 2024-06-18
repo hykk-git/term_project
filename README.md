@@ -1,5 +1,5 @@
 # AutoManito 
-<picture><img src="images/banner.png"alt="banner"></picture>
+<picture><img src="images\banner.png"alt="banner"></picture>
 Automanito는 마니또를 자동으로 매칭해 주는 웹사이트입니다.
 
 ##How to use
