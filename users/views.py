@@ -1,6 +1,7 @@
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect
 from .models import Muser, Mgroup, Message
+from adminapp.models import Announcement
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages 
 from django.contrib.auth.hashers import make_password
@@ -23,14 +24,10 @@ def register_group(request):
     if request.method == 'POST':
         group_name = request.POST.get('group_name')
         end_date = request.POST.get('end_date')
-        
-        end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%dT%H:%M'))
-        
-        if Mgroup.objects.filter(name=group_name).exists():
-            # 그룹이 존재하면 오류 메시지를 반환
-            return render(request, 'register_group.html', {'user_count': range(1, 6), 'error': '그룹이 이미 존재합니다. 다른 이름을 사용하세요.'})
-        
-        users_data = []
+        manager_name = request.POST.get('manager_name')
+        manager_password = request.POST.get('manager_password')
+
+        users_data = []  
         existing_usernames = []
         duplicate_usernames = []
 
@@ -50,25 +47,57 @@ def register_group(request):
                     })
                     existing_usernames.append(username)
             user_index += 1
-            
-        if duplicate_usernames:
-            error_message = f"다음 사용자 이름은 이미 존재합니다: {', '.join(duplicate_usernames)}"
-            return render(request, 'register_group.html', {'user_count': range(1, 6), 'error': error_message})
+
+        if Mgroup.objects.filter(name=group_name).exists():
+            # 그룹이 존재하면 오류 메시지를 반환
+            return render(request, 'register_group.html', {
+                'user_count': range(1, 6), 
+                'error': '그룹이 이미 존재합니다. 다른 이름을 사용하세요.',
+                'group_name': group_name,  
+                'end_date': end_date,  
+                'users_data': users_data,
+                'manager_name': manager_name,
+                'manager_password': manager_password
+            })
+
+        duplicate_usernames = [user['username'] for user in users_data if Muser.objects.filter(username=user['username']).exists()]
         
+        if duplicate_usernames or Muser.objects.filter(username=manager_name).exists():
+            error_message = f"다음 사용자 이름은 이미 존재합니다: {', '.join(duplicate_usernames)}"
+            if Muser.objects.filter(username=manager_name).exists():
+                error_message += f" 관리자 이름 '{manager_name}"
+            return render(request, 'register_group.html', {
+                'user_count': range(1, 6), 
+                'error': error_message,
+                'group_name': group_name,  
+                'end_date': end_date,  
+                'users_data': users_data,
+                'manager_name': manager_name,
+                'manager_password': manager_password
+            })
+
         # 그룹 생성
         group, created = Mgroup.objects.get_or_create(name=group_name, end_date=end_date)
-        
+
         # 사용자 생성
         users = []
         for user_data in users_data:
             user = Muser(username=user_data['username'], group=group, password=user_data['password'])
             user.save()
             users.append(user)
-        
+
         # 마니또 배정
         assign_manito(users)
-        
-        # 주기적인 작업 생성
+
+        # 관리자 생성
+        manager = Muser.objects.create(
+            username=manager_name,
+            group=group,
+            password=make_password(manager_password),
+            is_manager=True  # is_manager 필드 설정
+        )
+
+        # 이벤트 기간 설정
         schedule, _ = CrontabSchedule.objects.get_or_create(
             minute='0',
             hour='0',
@@ -82,13 +111,14 @@ def register_group(request):
             name=f'Delete expired group {group_name}',
             task='users.tasks.delete_expired_groups',
             args=json.dumps([group.id]),
-            expires=end_date  # 작업 만료일을 그룹 종료일로 설정
+            expires=end_date
         )
 
         messages.success(request, '그룹과 구성원이 성공적으로 등록되었으며, 마니또가 할당되었습니다.')
         return redirect('success')  # 회원가입 성공 후 success 페이지로 리다이렉션
 
     return render(request, 'register_group.html', {'user_count': range(1, 6)})
+
 def register_user(request):
     if request.method == 'POST':
         group_name = request.POST.get('group_name')
@@ -112,7 +142,7 @@ def register_user(request):
 def get_users(request):
     group_name = request.GET.get('group_name')
     group = Mgroup.objects.get(name=group_name)
-    users = Muser.objects.filter(group=group).values('username')
+    users = Muser.objects.filter(group=group, is_manager=False).values('username')
     return JsonResponse(list(users), safe=False)
 
 
@@ -148,9 +178,13 @@ def manito_message(request):
     user = request.user
     manito = user.manito
     end_date = user.group.end_date if user.group.end_date else None
+    announcements = Announcement.objects.filter(group=user.group, target_user__isnull=True) | Announcement.objects.filter(target_user=user)
+    announcements = announcements.order_by('-created_at')[:10]
+    
     context = {
         'manito_name': manito.username if manito else '마니또가 없습니다.',
-        'end_date' : end_date.strftime('%Y-%m-%d %H:%M:%S') if end_date else "0"
+        'end_date' : end_date.strftime('%Y-%m-%d %H:%M:%S') if end_date else "0",
+        'announcements': announcements
     }
     return render(request, 'manito_message.html', context)
 

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-
+from django.dispatch import receiver
+from django_celery_beat.models import PeriodicTask
+from django.db.models.signals import post_delete
 def reassign_manito(collector, field, sub_objs, using):
     """
     This function is called when a 'manito' is deleted.
@@ -54,7 +56,8 @@ class Muser(AbstractUser):
     group = models.ForeignKey(Mgroup, on_delete=models.CASCADE)
     manito = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     password = models.CharField(max_length=128)
-
+    is_manager = models.BooleanField(default=False)
+    
     objects = UserManager()
 
     class Meta:
@@ -82,7 +85,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f'From {self.sender.username} to {self.receiver.username}'
-        
+
+@receiver(post_delete, sender=Mgroup)
+def delete_periodic_task(sender, instance, **kwargs):
+    task_name = f"Delete expired group {instance.name}"
+    tasks = PeriodicTask.objects.filter(name__startswith=task_name)
+    tasks.delete()
+    
 """1. 등록시 그룹이름 겹칠때, 사용자 이름 겹칠 때 예외처리
     2. 비밀번호 틀렸을때
 """

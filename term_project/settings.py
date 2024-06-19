@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "auto_manito",
     "users",
+    "adminapp",
 ]
 
 MIDDLEWARE = [

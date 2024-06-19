@@ -19,11 +19,14 @@
             position: absolute;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 10px;
         }
         .event-timer {
             position: absolute;
             top: 10px;
             left: 10px;
+            right: 10px;
             font-size: 1rem;
             color: gray;
             padding: 5px;
@@ -31,6 +34,13 @@
         }
         .message-button {
             background: url("{% static 'letter.jpg' %}") no-repeat center;
+            background-size: contain;
+            border: none;
+            width: 50px;
+            height: 50px;
+        }
+        .announcement-button {
+            background: url("{% static 'bell.jpg' %}") no-repeat center;
             background-size: contain;
             border: none;
             width: 50px;
@@ -46,14 +56,97 @@
             opacity: 0;
         }
     </style>
+    <script src="{% static 'users/scripts/clock.js' %}"></script>
+    <script>
+        function showMessageModal() {
+            document.getElementById('messageModal').style.display = 'block';
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        function showInbox() {
+            fetch('/inbox/')
+                .then(response => response.json())
+                .then(data => {
+                    const inboxModal = document.getElementById('inboxModal');
+                    const inboxContent = document.getElementById('inboxContent');
+                    inboxContent.innerHTML = '';
+
+                    if (data.messages.length === 0) {
+                        inboxContent.innerHTML = '<p>받은 쪽지가 없습니다.</p>';
+                    } else {
+                        data.messages.forEach(message => {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.classList.add('card', 'mb-2');
+                            messageDiv.innerHTML = `
+                                <div class="card-body">
+                                    <p>${message.content}</p>
+                                    <form method="post" action="/delete_message/${message.id}/">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${data.csrf_token}">
+                                        <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                    </form>
+                                </div>
+                            `;
+                            inboxContent.appendChild(messageDiv);
+                        });
+                    }
+
+                    inboxModal.style.display = 'block';
+                });
+        }
+
+        function closeInboxModal() {
+            document.getElementById('inboxModal').style.display = 'none';
+        }
+
+        function showAnnouncements() {
+            const announcementsModal = document.getElementById('announcementsModal');
+            announcementsModal.style.display = 'block';
+        }
+
+        function closeAnnouncementsModal() {
+            document.getElementById('announcementsModal').style.display = 'none';
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const content = document.getElementById('content').value;
+
+            fetch('{% url "send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: new URLSearchParams({ content: content }).toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const successPopup = document.getElementById('successPopup');
+                    successPopup.innerText = '전송했습니다.';
+                    successPopup.style.display = 'block';
+                    setTimeout(() => {
+                        successPopup.classList.add('fade-out');
+                        setTimeout(() => {
+                            successPopup.style.display = 'none';
+                            successPopup.classList.remove('fade-out');
+                        }, 2000);
+                    }, 1000);
+                    closeMessageModal();
+                } else {
+                    alert(data.error);
+                }
+            });
+        }
+    </script>
 </head>
 <body>
-    <!-- 이벤트 기간 표시 -->
     <div id="event-timer" class="event-timer" data-end-date="{{ end_date }}"></div>
-
     <div class="container mt-5">
-        <br>
-        <h1 class="text-center">당신의 마니또는 {{ manito_name }}입니다!</h1>
+        <h1 class="text-center">당신의 마니또는 {{ manito_name }}입니다</h1>
         <div class="text-center mt-4 button-container">
             <form method="post" action="{% url 'logout_view' %}">
                 {% csrf_token %}
@@ -94,15 +187,43 @@
                     <button type="button" class="btn-close" onclick="closeInboxModal()"></button>
                 </div>
                 <div class="modal-body" id="inboxContent">
-                    <!-- 쪽지 내용 동적으로 추가 -->
+                    <!-- 쪽지 내용이 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 쪽지함 버튼 -->
+    <!-- 공지사항 모달 -->
+    <div id="announcementsModal" class="modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">공지사항</h5>
+                    <button type="button" class="btn-close" onclick="closeAnnouncementsModal()"></button>
+                </div>
+                <div class="modal-body">
+                    {% for announcement in announcements %}
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <p>{{ announcement.content }}</p>
+                            <form method="post" action="{% url 'delete_announcement' announcement.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p>공지사항이 없습니다.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상단 버튼들 -->
     <div class="top-right">
         <button class="message-button" onclick="showInbox()"></button>
+        <button class="announcement-button" onclick="showAnnouncements()"></button>
     </div>
 
     <!-- 성공 팝업 -->

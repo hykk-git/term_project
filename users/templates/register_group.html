@@ -14,7 +14,7 @@
         }
     </style>
     <script>
-        function addUserField() {
+        function addUserField(username = '') {
             var userFields = document.getElementById('user-fields');
             var newField = document.createElement('div');
             newField.className = 'form-row user-field mb-3';
@@ -23,7 +23,7 @@
             newField.innerHTML = `
                 <div class="form-group col-md-4">
                     <label for="username${index}">사용자명:</label>
-                    <input type="text" class="form-control" id="username${index}" name="username${index}" required autocomplete="off"> 
+                    <input type="text" class="form-control" id="username${index}" name="username${index}" value="${username}" required autocomplete="off"> 
                 </div>
                 <div class="form-group col-md-2 align-self-end">
                     <button type="button" class="btn btn-danger" onclick="removeUserField(this)">지우기</button>
@@ -36,6 +36,17 @@
             var userFields = document.getElementById('user-fields');
             userFields.removeChild(button.parentElement.parentElement);
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const usersData = {{ users_data|default:"[]"|safe }};  
+            if (usersData.length > 0) {
+                usersData.forEach(user => addUserField(user.username));
+            } else {
+                for (let i = 0; i < 5; i++) {
+                    addUserField();
+                }
+            }
+        });
     </script>
 </head>
 <body>
@@ -45,26 +56,22 @@
             {% csrf_token %}
             <div class="form-group">
                 <label for="group_name">그룹 이름:</label>
-                <input type="text" class="form-control" id="group_name" name="group_name" required autocomplete="off">
+                <input type="text" class="form-control" id="group_name" name="group_name" required autocomplete="off" value="{{ group_name|default:'' }}">
             </div>
             <div class="form-group">
                 <label for="event_end_date">마니또 진행 기간:</label>
-                <input type="datetime-local" class="form-control" id="end_date" name="end_date" required autocomplete="off">
+                <input type="datetime-local" class="form-control" id="event_end_date" name="event_end_date" required autocomplete="off" value="{{ end_date|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="manager_name">관리자 이름:</label>
+                <input type="text" class="form-control" id="manager_name" name="manager_name" required autocomplete="off" value="{{ manager_name|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="manager_password">관리자 비밀번호:</label>
+                <input type="password" class="form-control" id="manager_password" name="manager_password" required autocomplete="off">
             </div>
             
-            <div id="user-fields">
-                {% for i in user_count %}
-                <div class="form-row user-field mb-3">
-                    <div class="form-group col-md-4">
-                        <label for="username{{ i }}">사용자명:</label>
-                        <input type="text" class="form-control" id="username{{ i }}" name="username{{ i }}" required autocomplete="off">
-                    </div>
-                    <div class="form-group col-md-2 align-self-end">
-                        <button type="button" class="btn btn-danger" onclick="removeUserField(this)">지우기</button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+            <div id="user-fields"></div>
             <button type="button" class="btn btn-primary" onclick="addUserField()">사용자 추가</button>
             <button type="submit" class="btn btn-success">그룹 만들기</button>
         </form>
