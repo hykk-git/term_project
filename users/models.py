@@ -57,6 +57,7 @@ class Muser(AbstractUser):
     manito = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     password = models.CharField(max_length=128)
     is_manager = models.BooleanField(default=False)
+    password_changed = models.BooleanField(default=False)
     
     objects = UserManager()
 
@@ -92,6 +93,3 @@ def delete_periodic_task(sender, instance, **kwargs):
     tasks = PeriodicTask.objects.filter(name__startswith=task_name)
     tasks.delete()
     
-"""1. 등록시 그룹이름 겹칠때, 사용자 이름 겹칠 때 예외처리
-    2. 비밀번호 틀렸을때
-"""

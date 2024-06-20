@@ -132,6 +132,7 @@ def register_user(request):
         user = Muser.objects.get(username=user_name, group=group)
 
         user.password = make_password(new_password)
+        user.password_changed = True
         user.save()
 
         messages.success(request, '비밀키가 설정되었습니다.')

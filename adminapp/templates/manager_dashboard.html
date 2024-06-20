@@ -90,6 +90,24 @@
 <body>
     <div class="container mt-5">
         <h2 class="text-center">{{ group_name }}가 진행 중~</h2>
+        {% if unconfirmed_users.exists %}
+        <div class="text-center mt-2">
+            <span class="unconfirmed-users">
+                {{ unconfirmed_users.count }}명의 사용자가 아직 자신의 마니또를 확인하지 않았어요!
+                <div class="unconfirmed-user-list">
+                    {% for user in unconfirmed_users %}
+                    <p>{{ user.username }}</p>
+                    {% endfor %}
+                </div>
+            </span>
+        </div>
+        {% else %}
+        <div class="text-center mt-2">
+            <span class="confirmed-users">
+                모두가 자신의 마니또를 확인했어요!
+            </span>
+        </div>
+        {% endif %}
         <div class="text-center mt-4">
             <button class="btn btn-primary" onclick="document.getElementById('announcementModal').style.display='block'">공지사항 보내기</button>
             <button class="btn btn-danger" onclick="confirmDeleteGroup()">그룹 삭제하기</button>

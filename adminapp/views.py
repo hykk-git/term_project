@@ -32,6 +32,8 @@ def manager_dashboard(request):
         return redirect('home')
 
     group = request.user.group
+    default_password = 'default_password'
+    unconfirmed_users = Muser.objects.filter(group=group, password=default_password).exclude(id=request.user.id)
     if request.method == 'POST':
         content = request.POST.get('content')
         target_user_id = request.POST.get('target_user')
@@ -45,10 +47,12 @@ def manager_dashboard(request):
 
     users = Muser.objects.filter(group=group).exclude(id=request.user.id)
     announcements = Announcement.objects.filter(group=group).order_by('-created_at')[:10]
+    
     context = {
         'group_name': group.name,
         'users': users,
-        'announcements': announcements
+        'announcements': announcements,
+        'unconfirmed_users': unconfirmed_users
     }
     return render(request, 'manager_dashboard.html', context)
 
@@ -68,3 +72,4 @@ def delete_announcement(request, announcement_id):
     
     announcement = get_object_or_404(Announcement, id=announcement_id, group=request.user.group)
     announcement.delete()
+    return redirect('manager_dashboard')
