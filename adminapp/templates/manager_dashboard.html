@@ -18,6 +18,29 @@
             transition: opacity 2s ease-out;
             opacity: 0;
         }
+        .unconfirmed-users {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .unconfirmed-user-list {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .unconfirmed-users .user-count {
+            color: blue;
+            text-decoration: underline;
+        }
+        .unconfirmed-users:hover .unconfirmed-user-list {
+            display: block;
+        }
+        .unconfirmed-user-list p {
+            margin: 2px 0; 
+        }
     </style>
     <script>
         function closeAnnouncementModal() {
@@ -93,7 +116,7 @@
         {% if unconfirmed_users.exists %}
         <div class="text-center mt-2">
             <span class="unconfirmed-users">
-                {{ unconfirmed_users.count }}명의 사용자가 아직 자신의 마니또를 확인하지 않았어요!
+                <span class="user-count">{{ unconfirmed_users.count }}</span>명의 사용자가 아직 자신의 마니또를 확인하지 않았어요!
                 <div class="unconfirmed-user-list">
                     {% for user in unconfirmed_users %}
                     <p>{{ user.username }}</p>
@@ -103,9 +126,7 @@
         </div>
         {% else %}
         <div class="text-center mt-2">
-            <span class="confirmed-users">
-                모두가 자신의 마니또를 확인했어요!
-            </span>
+            <span>모두가 자신의 마니또를 확인했어요!</span>
         </div>
         {% endif %}
         <div class="text-center mt-4">

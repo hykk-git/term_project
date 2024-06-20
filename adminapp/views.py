@@ -32,8 +32,8 @@ def manager_dashboard(request):
         return redirect('home')
 
     group = request.user.group
-    default_password = 'default_password'
-    unconfirmed_users = Muser.objects.filter(group=group, password=default_password).exclude(id=request.user.id)
+    unconfirmed_users = Muser.objects.filter(group=group, password_changed=False).exclude(id=request.user.id)
+        
     if request.method == 'POST':
         content = request.POST.get('content')
         target_user_id = request.POST.get('target_user')
